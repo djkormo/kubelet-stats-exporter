@@ -21,10 +21,16 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            petrosd/kubelet-stats-exporter
+            djkormo/kubelet-stats-exporter
           # generate Docker tags based on the following events/attributes
           tags: |
-            type=ref,event=tag
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -44,3 +50,14 @@ jobs:
         with:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          
+          
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: djkormo/kubelet-stats-exporter:main
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
